@@ -99,7 +99,6 @@ class JoinSession : AppCompatActivity() {
                 }
                 startActivity(intent)
             } else {
-                println("here!")
                 lifecycleScope.launch {
                     val response =
                         ApiClient.apiService.getJWT(sessionName, username, password, body)

@@ -42,6 +42,4 @@ curl --location --request POST 'http://ENDPOINT_URL/zoomtoken?token=&name=&passw
 ```
 
 ## Usage
-After entering either a JWTToken or Endpoint URL and configuring your Endpoint,  you can start the Sample App by clicking Build and Run! 
-
-<img width="755" alt="Image" src="https://github.com/user-attachments/assets/d49a4c37-60d3-471a-b3e4-0b6a13947c41" />
+After entering either a JWTToken or Endpoint URL and configuring your Endpoint,  you can start the Sample App by clicking Build and Run!

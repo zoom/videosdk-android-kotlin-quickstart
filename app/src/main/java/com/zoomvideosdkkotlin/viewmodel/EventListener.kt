@@ -4,6 +4,8 @@ import android.widget.FrameLayout
 import com.tylerthrailkill.helpers.prettyprint.pp
 import com.zoomvideosdkkotlin.R
 import us.zoom.sdk.IncomingLiveStreamStatus
+import us.zoom.sdk.SubSessionKit
+import us.zoom.sdk.SubSessionUserHelpRequestHandler
 import us.zoom.sdk.UVCCameraStatus
 import us.zoom.sdk.ZoomVideoSDK
 import us.zoom.sdk.ZoomVideoSDKAnnotationHelper
@@ -38,9 +40,14 @@ import us.zoom.sdk.ZoomVideoSDKSession
 import us.zoom.sdk.ZoomVideoSDKSessionLeaveReason
 import us.zoom.sdk.ZoomVideoSDKShareAction
 import us.zoom.sdk.ZoomVideoSDKShareHelper
+import us.zoom.sdk.ZoomVideoSDKShareSetting
 import us.zoom.sdk.ZoomVideoSDKShareStatus
+import us.zoom.sdk.ZoomVideoSDKSubSessionManager
+import us.zoom.sdk.ZoomVideoSDKSubSessionParticipant
+import us.zoom.sdk.ZoomVideoSDKSubSessionStatus
 import us.zoom.sdk.ZoomVideoSDKTestMicStatus
 import us.zoom.sdk.ZoomVideoSDKUser
+import us.zoom.sdk.ZoomVideoSDKUserHelpRequestResult
 import us.zoom.sdk.ZoomVideoSDKUserHelper
 import us.zoom.sdk.ZoomVideoSDKVideoCanvas
 import us.zoom.sdk.ZoomVideoSDKVideoHelper
@@ -271,6 +278,9 @@ class EventListener(zoomViewModel: ZoomSessionViewModel) {
             pp("onCloudRecordingStatus")
         }
 
+        override fun onSpokenLanguageChanged(spokenLanguage: ZoomVideoSDKLiveTranscriptionHelper.ILiveTranscriptionLanguage?) {
+            pp("onSpokenLanguageChanged")
+        }
         override fun onHostAskUnmute() {
             pp("onHostAskUnmute")
         }
@@ -443,6 +453,13 @@ class EventListener(zoomViewModel: ZoomSessionViewModel) {
             pp("onUnbindIncomingLiveStreamResponse")
         }
 
+        override fun onShareNetworkStatusChanged(
+            shareNetworkStatus: ZoomVideoSDKNetworkStatus?,
+            isSendingShare: Boolean
+        ) {
+            pp("onShareNetworkStatusChanged")
+        }
+
         override fun onIncomingLiveStreamStatusResponse(
             bSuccess: Boolean,
             streamsStatusList: MutableList<IncomingLiveStreamStatus>?
@@ -464,6 +481,41 @@ class EventListener(zoomViewModel: ZoomSessionViewModel) {
             shareAction: ZoomVideoSDKShareAction?
         ) {
             pp("onShareContentSizeChanged")
+        }
+
+        override fun onSubSessionStatusChanged(
+            status: ZoomVideoSDKSubSessionStatus?,
+            subSessionKitList: MutableList<SubSessionKit>?
+        ) {
+            pp("onSubSessionStatusChanged")
+        }
+
+        override fun onSubSessionManagerHandle(manager: ZoomVideoSDKSubSessionManager?) {
+            pp("onSubSessionManagerHandle")
+        }
+
+        override fun onSubSessionParticipantHandle(participant: ZoomVideoSDKSubSessionParticipant?) {
+            pp("onSubSessionParticipantHandle")
+        }
+
+        override fun onSubSessionUsersUpdate(subSessionKit: SubSessionKit?) {
+            pp("onSubSessionUsersUpdate")
+        }
+
+        override fun onBroadcastMessageFromMainSession(message: String?, userName: String?) {
+            pp("onBroadcastMessageFromMainSession")
+        }
+
+        override fun onSubSessionUserHelpRequest(handler: SubSessionUserHelpRequestHandler?) {
+            pp("onSubSessionUserHelpRequest")
+        }
+
+        override fun onSubSessionUserHelpRequestResult(eResult: ZoomVideoSDKUserHelpRequestResult?) {
+            pp("onSubSessionUserHelpRequestResult")
+        }
+
+        override fun onShareSettingChanged(setting: ZoomVideoSDKShareSetting?) {
+            pp("onShareSettingChanged")
         }
     }
 }

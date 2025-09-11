@@ -21,5 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "zoomvideosdkkotlin"
 include(":app")
-include(":mobilertc")
  

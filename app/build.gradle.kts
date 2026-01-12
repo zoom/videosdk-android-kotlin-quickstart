@@ -41,16 +41,16 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.monitor)
+    implementation(libs.androidx.junit.ktx)
+    implementation(libs.zoomvideosdk.core)
+    implementation(libs.androidx.lifecycle.runtime.android)
     implementation("com.squareup.retrofit2:retrofit:2.10.0")
     implementation("com.squareup.retrofit2:converter-gson:2.10.0")
     implementation("com.tylerthrailkill.helpers:pretty-print:v2.0.8")
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")
     api("io.jsonwebtoken:jjwt-api:0.12.6")
-    implementation(libs.androidx.lifecycle.runtime.android)
     implementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
-    implementation(libs.androidx.monitor)
-    implementation(libs.androidx.junit.ktx)
-    implementation(libs.zoomvideosdk.core)
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
     runtimeOnly("io.jsonwebtoken:jjwt-orgjson:0.12.6") {
         exclude("group:org.json", "module:json")
@@ -59,6 +59,5 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel:2.3.1")
     implementation ("androidx.lifecycle:lifecycle-livedata:2.3.1")
     implementation("com.google.android.flexbox:flexbox:3.0.0")
-    implementation("us.zoom.videosdk:zoomvideosdk-core:2.3.0")
     }
 }

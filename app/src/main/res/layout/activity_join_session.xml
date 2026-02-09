@@ -8,61 +8,78 @@
     tools:context=".activities.JoinSession">
 
     <LinearLayout
-        android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center">
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/sessionNameTextField"
-        android:layout_width="300dp"
-        android:layout_height="wrap_content"
-        android:hint="session name"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-        tools:ignore="MissingConstraints">
-        <com.google.android.material.textfield.TextInputEditText
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/sessionNameTextEditField"
-            android:text="testSession"
-            />
-    </com.google.android.material.textfield.TextInputLayout>
+        android:gravity="center"
+        android:orientation="vertical"
+        tools:layout_editor_absoluteX="136dp"
+        tools:layout_editor_absoluteY="248dp">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/usernameTextField"
-        android:layout_width="300dp"
-        android:layout_height="wrap_content"
-        android:hint="username"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-        tools:ignore="MissingConstraints">
-        <com.google.android.material.textfield.TextInputEditText
-            android:layout_width="match_parent"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/sessionNameTextField"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="300dp"
             android:layout_height="wrap_content"
-            android:id="@+id/usernameTextEditField"
-            android:text="testUser"
-            />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:hint="session name"
+            tools:ignore="MissingConstraints">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/passwordTextField"
-        android:layout_width="300dp"
-        android:layout_height="wrap_content"
-        android:hint="password"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-        tools:ignore="MissingConstraints">
-        <com.google.android.material.textfield.TextInputEditText
-            android:layout_width="match_parent"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/sessionNameTextEditField"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="testSession" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/usernameTextField"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="300dp"
             android:layout_height="wrap_content"
-            android:id="@+id/passwordTextEditField"
-            android:text="12345"
-            />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:hint="username"
+            tools:ignore="MissingConstraints">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/usernameTextEditField"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="testUser" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/passwordTextField"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:hint="password"
+            tools:ignore="MissingConstraints">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/passwordTextEditField"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/jwtTokenTextField"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:hint="JWT Token"
+            tools:ignore="MissingConstraints">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/jwtTokenTextEditField"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="" />
+        </com.google.android.material.textfield.TextInputLayout>
 
         <Button
             android:id="@+id/joinsessionBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Join Session"
-            />
+            android:text="Join Session" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

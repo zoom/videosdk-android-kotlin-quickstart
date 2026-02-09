@@ -14,7 +14,6 @@ import com.google.android.material.textfield.TextInputLayout
 import com.google.gson.Gson
 import com.zoomvideosdkkotlin.R
 import com.google.gson.annotations.SerializedName
-import com.zoomvideosdkkotlin.utils.TokenGenerator
 import kotlinx.coroutines.launch
 import retrofit2.awaitResponse
 import java.io.Serializable
@@ -41,18 +40,18 @@ class JoinSession : AppCompatActivity() {
         directory = "/assets"
         filename = "env"
     }
-    //place generated JWT here, if no value is provided the APIClient will be used
-    //to retrieve a token from your specified Endpoint
-    private val sdkKey: String = dotenv["SDK_KEY"]
-    private val sdkSecret: String = dotenv["SDK_SECRET"]
+
+    private val endpointURL: String = dotenv["ENDPOINT_URL"]
 
     private lateinit var sessionNameTextField: TextInputLayout
     private lateinit var usernameTextField: TextInputLayout
     private lateinit var passwordTextField: TextInputLayout
+    private lateinit var jwtTokenTextField: TextInputLayout
     private lateinit var joinSessionButton: Button
     private lateinit var sessionName: String
     private lateinit var username: String
     private lateinit var password: String
+    private lateinit var jwtToken: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,10 +60,12 @@ class JoinSession : AppCompatActivity() {
         sessionNameTextField = findViewById(R.id.sessionNameTextField)
         usernameTextField = findViewById(R.id.usernameTextField)
         passwordTextField = findViewById(R.id.passwordTextField)
+        jwtTokenTextField = findViewById(R.id.jwtTokenTextField)
         joinSessionButton = findViewById(R.id.joinsessionBtn)
         sessionName = findViewById<TextInputEditText>(R.id.sessionNameTextEditField).text.toString()
         username = findViewById<TextInputEditText>(R.id.usernameTextEditField).text.toString()
         password = findViewById<TextInputEditText>(R.id.passwordTextEditField).text.toString()
+        jwtToken = findViewById<TextInputEditText>(R.id.jwtTokenTextEditField).text.toString()
 
         sessionNameTextField.editText?.doOnTextChanged { sessionName : CharSequence?, _:Int, _:Int, _:Int ->
             this.sessionName = sessionName.toString()
@@ -74,6 +75,9 @@ class JoinSession : AppCompatActivity() {
         }
         passwordTextField.editText?.doOnTextChanged { password: CharSequence?, _:Int, _:Int, _:Int ->
             this.password = password.toString()
+        }
+        jwtTokenTextField.editText?.doOnTextChanged { jwtToken: CharSequence?, _:Int, _:Int, _:Int ->
+            this.jwtToken = jwtToken.toString()
         }
 
         joinSessionButton.setOnClickListener {
@@ -90,10 +94,9 @@ class JoinSession : AppCompatActivity() {
                 audio_webrtc_mode = 0
             )
 
-            if (sdkKey.isNotEmpty() && sdkSecret.isNotEmpty()) {
-                val signature: String = TokenGenerator.generateToken(body, sdkKey, sdkSecret)
-                val config = Config(sessionName, username, password, signature)
-                println(signature)
+            if (endpointURL.isEmpty()) {
+                println("JWT from local " + jwtToken)
+                val config = Config(sessionName, username, password, jwtToken)
                 val intent = Intent(context, InSession::class.java).apply {
                     putExtra("config", config)
                 }
@@ -106,7 +109,7 @@ class JoinSession : AppCompatActivity() {
                     if (response.isSuccessful) {
                         val jwt = Gson().fromJson(response.body(), Signature::class.java)
                         val config = Config(sessionName, username, password, jwt.signature)
-                        println(jwt.signature)
+                        println("JWT from server " + jwt.signature)
                         val intent = Intent(context, InSession::class.java).apply {
                             putExtra("config", config)
                         }

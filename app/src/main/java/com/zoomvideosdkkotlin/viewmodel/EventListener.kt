@@ -539,22 +539,22 @@ class EventListener(zoomViewModel: ZoomSessionViewModel) {
         }
 
         override fun onStreamingJoinStatusChanged(status: ZoomVideoSDKStreamingJoinStatus?) {
-            TODO("Not yet implemented")
+            pp("onStreamingJoinStatusChanged")
         }
 
         override fun onUserWhiteboardShareStatusChanged(
             user: ZoomVideoSDKUser?,
             helper: ZoomVideoSDKWhiteboardHelper?
         ) {
-            TODO("Not yet implemented")
+            pp("onUserWhiteboardShareStatusChanged")
         }
 
         override fun onWhiteboardExported(format: ZoomVideoSDKExportFormat?, data: ByteArray?) {
-            TODO("Not yet implemented")
+            pp("onWhiteboardExported")
         }
 
         override fun onMyAudioSourceTypeChanged(device: ZoomVideoSDKAudioHelper.ZoomVideoSDKAudioDevice?) {
-            TODO("Not yet implemented")
+            pp("onMyAudioSourceTypeChanged")
         }
 
         override fun onUserNetworkStatusChanged(
@@ -562,14 +562,14 @@ class EventListener(zoomViewModel: ZoomSessionViewModel) {
             level: ZoomVideoSDKNetworkStatus?,
             user: ZoomVideoSDKUser?
         ) {
-            TODO("Not yet implemented")
+            pp("onUserNetworkStatusChanged")
         }
 
         override fun onUserOverallNetworkStatusChanged(
             level: ZoomVideoSDKNetworkStatus?,
             user: ZoomVideoSDKUser?
         ) {
-            TODO("Not yet implemented")
+            pp("onUserOverallNetworkStatusChanged")
         }
 
         override fun onAudioLevelChanged(
@@ -577,15 +577,15 @@ class EventListener(zoomViewModel: ZoomSessionViewModel) {
             audioSharing: Boolean,
             user: ZoomVideoSDKUser?
         ) {
-            TODO("Not yet implemented")
+            pp("onAudioLevelChanged")
         }
 
         override fun onRealTimeMediaStreamsStatus(status: RealTimeMediaStreamsStatus?) {
-            TODO("Not yet implemented")
+            pp("onRealTimeMediaStreamsStatus")
         }
 
         override fun onRealTimeMediaStreamsFail(failReason: RealTimeMediaStreamsFailReason?) {
-            TODO("Not yet implemented")
+            pp("onRealTimeMediaStreamsFail")
         }
     }
 }

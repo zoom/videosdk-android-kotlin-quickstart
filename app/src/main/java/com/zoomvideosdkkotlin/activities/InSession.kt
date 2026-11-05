@@ -5,10 +5,12 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.widget.CompoundButton
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -21,9 +23,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
 import com.zoomvideosdkkotlin.R
+import com.zoomvideosdkkotlin.viewmodel.OnHoldParticipant
 import com.zoomvideosdkkotlin.viewmodel.ZoomSessionViewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import us.zoom.sdk.ZoomVideoSDKErrors
 import us.zoom.sdk.ZoomVideoSDKVideoView
 
 
@@ -37,6 +41,14 @@ class InSession : AppCompatActivity() {
         android.Manifest.permission.RECORD_AUDIO,
         android.Manifest.permission.CAMERA
     )
+    private lateinit var waitingRoomOverlay: FrameLayout
+    private lateinit var hostOptionsBtn: MaterialButton
+    private lateinit var hostParticipantsPanel: FrameLayout
+    private lateinit var hostAdmitPanel: FrameLayout
+    private lateinit var participantsListContainer: LinearLayout
+    private lateinit var onHoldListContainer: LinearLayout
+    private lateinit var enableHoldInSessionSwitch: com.google.android.material.switchmaterial.SwitchMaterial
+    private var suppressHoldSwitchListener: Boolean = false
     private val requestMultiplePermissionsLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissionsMap ->
             permissionsMap.forEach { (permission, isGranted) ->
@@ -46,6 +58,60 @@ class InSession : AppCompatActivity() {
                 }
             }
         }
+
+    private fun createUserRow(
+        userName: String,
+        actionText: String? = null,
+        onClick: (() -> Unit)? = null
+    ): LinearLayout {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { setMargins(0, 8, 0, 8) }
+        }
+        val nameView = TextView(this).apply {
+            text = userName
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        row.addView(nameView)
+        if (actionText != null && onClick != null) {
+            val actionButton = MaterialButton(this).apply {
+                text = actionText
+                setOnClickListener { onClick() }
+            }
+            row.addView(actionButton)
+        }
+        return row
+    }
+
+    private fun renderParticipantsList() {
+        participantsListContainer.removeAllViews()
+        val users = zoomSessionViewModel.getAllSessionUsers()
+        if (users.isEmpty()) {
+            participantsListContainer.addView(createUserRow("No participants"))
+            return
+        }
+        users.forEach { user ->
+            participantsListContainer.addView(createUserRow(user.userName))
+        }
+    }
+
+    private fun renderOnHoldList(onHoldParticipants: List<OnHoldParticipant>) {
+        onHoldListContainer.removeAllViews()
+        if (onHoldParticipants.isEmpty()) {
+            onHoldListContainer.addView(createUserRow("No users waiting"))
+            return
+        }
+        onHoldParticipants.forEach { user ->
+            onHoldListContainer.addView(
+                createUserRow(user.userName, "Admit") {
+                    zoomSessionViewModel.admitOnHoldUser(user.userId)
+                }
+            )
+        }
+    }
 
     private fun manageUserView(
         userVideoOn: Boolean,
@@ -69,6 +135,13 @@ class InSession : AppCompatActivity() {
         setContentView(R.layout.activity_in_session)
         config = intent.getSerializableExtra("config") as Config
         val context: Context = this
+        waitingRoomOverlay = findViewById(R.id.waitingRoomOverlay)
+        hostOptionsBtn = findViewById(R.id.hostOptionsBtn)
+        hostParticipantsPanel = findViewById(R.id.hostParticipantsPanel)
+        hostAdmitPanel = findViewById(R.id.hostAdmitPanel)
+        participantsListContainer = findViewById(R.id.participantsListContainer)
+        onHoldListContainer = findViewById(R.id.onHoldListContainer)
+        enableHoldInSessionSwitch = findViewById(R.id.enableHoldInSessionSwitch)
 
         val allPermissionsGranted = permissions.all {
             ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
@@ -106,6 +179,45 @@ class InSession : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.endbtn).apply {
             setOnClickListener { zoomSessionViewModel.closeSession(false) }
         }
+        hostOptionsBtn.setOnClickListener {
+            val menu = PopupMenu(this, hostOptionsBtn)
+            menu.menu.add("Participants")
+            menu.menu.add("Admit Participants")
+            menu.setOnMenuItemClickListener { menuItem ->
+                when (menuItem.title.toString()) {
+                    "Participants" -> {
+                        renderParticipantsList()
+                        hostParticipantsPanel.visibility = View.VISIBLE
+                    }
+                    "Admit Participants" -> {
+                        zoomSessionViewModel.refreshOnHoldUsersFromHelper()
+                        renderOnHoldList(zoomSessionViewModel.getState().onHoldParticipants)
+                        hostAdmitPanel.visibility = View.VISIBLE
+                    }
+                }
+                true
+            }
+            menu.show()
+        }
+        findViewById<MaterialButton>(R.id.closeParticipantsPanelBtn).setOnClickListener {
+            hostParticipantsPanel.visibility = View.GONE
+        }
+        findViewById<MaterialButton>(R.id.closeAdmitPanelBtn).setOnClickListener {
+            hostAdmitPanel.visibility = View.GONE
+        }
+        findViewById<MaterialButton>(R.id.admitAllBtn).setOnClickListener {
+            zoomSessionViewModel.admitAllOnHoldUsers()
+        }
+        val holdSwitchListener = CompoundButton.OnCheckedChangeListener { _, isChecked ->
+            if (suppressHoldSwitchListener) return@OnCheckedChangeListener
+            val result = zoomSessionViewModel.setHoldEnabled(isChecked)
+            if (result != ZoomVideoSDKErrors.Errors_Success) {
+                suppressHoldSwitchListener = true
+                enableHoldInSessionSwitch.isChecked = !isChecked
+                suppressHoldSwitchListener = false
+            }
+        }
+        enableHoldInSessionSwitch.setOnCheckedChangeListener(holdSwitchListener)
         findViewById<TextView>(R.id.title).text = config.sessionName
 
         zoomSessionViewModel.setSelfViews(findViewById(R.id.bigselfview), findViewById(R.id.draggableselfview))
@@ -230,6 +342,14 @@ class InSession : AppCompatActivity() {
                                 if (it.maxPages > 1 && it.pageNumber != 1) View.VISIBLE else View.GONE
                             forwardbtn.visibility =
                                 if (it.maxPages > 1 && it.maxPages != it.pageNumber) View.VISIBLE else View.GONE
+                            waitingRoomOverlay.visibility =
+                                if (it.waitingForHostAdmission) View.VISIBLE else View.GONE
+                            hostOptionsBtn.visibility = if (it.isHost) View.VISIBLE else View.GONE
+                            suppressHoldSwitchListener = true
+                            enableHoldInSessionSwitch.isChecked = it.holdEnabled
+                            suppressHoldSwitchListener = false
+                            if (hostParticipantsPanel.visibility == View.VISIBLE) renderParticipantsList()
+                            if (hostAdmitPanel.visibility == View.VISIBLE) renderOnHoldList(it.onHoldParticipants)
                         } else {
                             val intent = Intent(context, JoinSession::class.java)
                             startActivity(intent)

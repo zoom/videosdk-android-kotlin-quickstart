@@ -25,6 +25,7 @@ import us.zoom.sdk.ZoomVideoSDKChatMessageDeleteType
 import us.zoom.sdk.ZoomVideoSDKChatPrivilegeType
 import us.zoom.sdk.ZoomVideoSDKDataType
 import us.zoom.sdk.ZoomVideoSDKDelegate
+import us.zoom.sdk.ZoomVideoSDKEmojiReactionType
 import us.zoom.sdk.ZoomVideoSDKExportFormat
 import us.zoom.sdk.ZoomVideoSDKFileTransferStatus
 import us.zoom.sdk.ZoomVideoSDKLiveStreamHelper
@@ -32,6 +33,8 @@ import us.zoom.sdk.ZoomVideoSDKLiveStreamStatus
 import us.zoom.sdk.ZoomVideoSDKLiveTranscriptionHelper
 import us.zoom.sdk.ZoomVideoSDKMultiCameraStreamStatus
 import us.zoom.sdk.ZoomVideoSDKNetworkStatus
+import us.zoom.sdk.ZoomVideoSDKOnHoldHelper
+import us.zoom.sdk.ZoomVideoSDKOnHoldUser
 import us.zoom.sdk.ZoomVideoSDKPasswordHandler
 import us.zoom.sdk.ZoomVideoSDKPhoneFailedReason
 import us.zoom.sdk.ZoomVideoSDKPhoneStatus
@@ -74,13 +77,15 @@ class EventListener(zoomViewModel: ZoomSessionViewModel) {
                 zoomViewModel.getMyself(),
                 zoomViewModel.getSelfView(returnDraggableSelfView = currentUsersInView.isNotEmpty())
             )
-            zoomViewModel.updateState( state.copy(sessionLoader = false, inSession = true))
-        }
-
-        override fun onSessionLeave() {
-            pp("onSessionLeave")
-            val state = zoomViewModel.getState()
-            zoomViewModel.updateState( state.copy(inSession = false))
+            zoomViewModel.updateState(
+                state.copy(
+                    sessionLoader = false,
+                    inSession = true,
+                    waitingForHostAdmission = false
+                )
+            )
+            zoomViewModel.refreshHostAndHoldState()
+            zoomViewModel.refreshOnHoldUsersFromHelper()
         }
 
         override fun onSessionLeave(reason: ZoomVideoSDKSessionLeaveReason?) {
@@ -130,6 +135,27 @@ class EventListener(zoomViewModel: ZoomSessionViewModel) {
                 zoomViewModel.stopRenderSelfView(zoomViewModel.getMyself(), zoomViewModel.getSelfView(returnDraggableSelfView = true))
                 zoomViewModel.renderView(zoomViewModel.getMyself(), zoomViewModel.getSelfView(returnDraggableSelfView = false))
             }
+        }
+
+        override fun onHoldJoined() {
+            pp("onHoldJoined")
+            zoomViewModel.setWaitingForHostAdmission(true)
+        }
+
+        override fun onHoldUserJoin(
+            onHoldHelper: ZoomVideoSDKOnHoldHelper?,
+            userList: List<ZoomVideoSDKOnHoldUser?>?
+        ) {
+            pp("onHoldUserJoin")
+            zoomViewModel.addOnHoldUsers(userList)
+        }
+
+        override fun onHoldUserLeave(
+            onHoldHelper: ZoomVideoSDKOnHoldHelper?,
+            userList: List<ZoomVideoSDKOnHoldUser?>?
+        ) {
+            pp("onHoldUserLeave")
+            zoomViewModel.removeOnHoldUsers(userList)
         }
 
         override fun onUserVideoStatusChanged(
@@ -232,6 +258,7 @@ class EventListener(zoomViewModel: ZoomSessionViewModel) {
             userInfo: ZoomVideoSDKUser?
         ) {
             pp("onUserHostChanged")
+            zoomViewModel.refreshHostAndHoldState()
         }
 
         override fun onUserManagerChanged(user: ZoomVideoSDKUser?) {
@@ -240,6 +267,13 @@ class EventListener(zoomViewModel: ZoomSessionViewModel) {
 
         override fun onUserNameChanged(user: ZoomVideoSDKUser?) {
             pp("onUserNameChanged")
+        }
+
+        override fun onUserFailoverStatusChanged(
+            user: ZoomVideoSDKUser?,
+            isInFailover: Boolean
+        ) {
+            TODO("Not yet implemented")
         }
 
         override fun onUserActiveAudioChanged(
@@ -290,6 +324,11 @@ class EventListener(zoomViewModel: ZoomSessionViewModel) {
         override fun onSpokenLanguageChanged(spokenLanguage: ZoomVideoSDKLiveTranscriptionHelper.ILiveTranscriptionLanguage?) {
             pp("onSpokenLanguageChanged")
         }
+
+        override fun onVoiceInterpretationReady() {
+            TODO("Not yet implemented")
+        }
+
         override fun onHostAskUnmute() {
             pp("onHostAskUnmute")
         }
@@ -354,13 +393,6 @@ class EventListener(zoomViewModel: ZoomSessionViewModel) {
             requestHandler: ZoomVideoSDKCameraControlRequestHandler?
         ) {
             pp("onCameraControlRequestReceived")
-        }
-
-        override fun onUserVideoNetworkStatusChanged(
-            status: ZoomVideoSDKNetworkStatus?,
-            user: ZoomVideoSDKUser?
-        ) {
-            pp("onUserVideoNetworkStatusChanged")
         }
 
         override fun onUserRecordingConsent(user: ZoomVideoSDKUser?) {
@@ -470,13 +502,6 @@ class EventListener(zoomViewModel: ZoomSessionViewModel) {
             pp("onUnbindIncomingLiveStreamResponse")
         }
 
-        override fun onShareNetworkStatusChanged(
-            shareNetworkStatus: ZoomVideoSDKNetworkStatus?,
-            isSendingShare: Boolean
-        ) {
-            pp("onShareNetworkStatusChanged")
-        }
-
         override fun onIncomingLiveStreamStatusResponse(
             bSuccess: Boolean,
             streamsStatusList: MutableList<IncomingLiveStreamStatus>?
@@ -549,6 +574,13 @@ class EventListener(zoomViewModel: ZoomSessionViewModel) {
 
         override fun onStreamingJoinStatusChanged(status: ZoomVideoSDKStreamingJoinStatus?) {
             pp("onStreamingJoinStatusChanged")
+        }
+
+        override fun onEmojiReactionReceived(
+            user: ZoomVideoSDKUser?,
+            type: ZoomVideoSDKEmojiReactionType?
+        ) {
+            TODO("Not yet implemented")
         }
 
         override fun onUserWhiteboardShareStatusChanged(

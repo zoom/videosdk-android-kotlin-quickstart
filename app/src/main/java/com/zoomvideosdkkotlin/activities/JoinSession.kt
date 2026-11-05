@@ -30,6 +30,7 @@ data class JWTOptions(
     @SerializedName("telemetry_tracking_id") val telemetry_tracking_id: String,
     @SerializedName("video_webrtc_mode") val video_webrtc_mode: Int,
     @SerializedName("audio_webrtc_mode") val audio_webrtc_mode: Int,
+    @SerializedName("hold") val hold: Int,
 )
 data class Signature(val signature: String)
 data class Config(val sessionName: String, val userName: String, val password: String?, val jwt: String ): Serializable
@@ -91,7 +92,8 @@ class JoinSession : AppCompatActivity() {
                 cloud_recording_election = 0,
                 telemetry_tracking_id = "internal-dev5",
                 video_webrtc_mode = 0,
-                audio_webrtc_mode = 0
+                audio_webrtc_mode = 0,
+                hold = 0
             )
 
             if (endpointURL.isEmpty()) {
@@ -109,7 +111,6 @@ class JoinSession : AppCompatActivity() {
                     if (response.isSuccessful) {
                         val jwt = Gson().fromJson(response.body(), Signature::class.java)
                         val config = Config(sessionName, username, password, jwt.signature)
-                        println("JWT from server " + jwt.signature)
                         val intent = Intent(context, InSession::class.java).apply {
                             putExtra("config", config)
                         }

@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
-import com.tylerthrailkill.helpers.prettyprint.pp
 import com.zoomvideosdkkotlin.activities.Config
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,6 +15,7 @@ import us.zoom.sdk.ZoomVideoSDKAudioOption
 import us.zoom.sdk.ZoomVideoSDKAudioStatus
 import us.zoom.sdk.ZoomVideoSDKErrors
 import us.zoom.sdk.ZoomVideoSDKInitParams
+import us.zoom.sdk.ZoomVideoSDKOnHoldUser
 import us.zoom.sdk.ZoomVideoSDKSession
 import us.zoom.sdk.ZoomVideoSDKSessionContext
 import us.zoom.sdk.ZoomVideoSDKUser
@@ -24,7 +24,13 @@ import us.zoom.sdk.ZoomVideoSDKVideoCanvas
 import us.zoom.sdk.ZoomVideoSDKVideoOption
 import us.zoom.sdk.ZoomVideoSDKVideoResolution
 import us.zoom.sdk.ZoomVideoSDKVideoView
+import java.util.LinkedHashMap
 import kotlin.math.ceil
+
+data class OnHoldParticipant(
+    val userId: String,
+    val userName: String
+)
 
 data class ZoomSessionUIState(
     val currentUsersInViewCount: Int = 0,
@@ -39,7 +45,11 @@ data class ZoomSessionUIState(
     val pageNumber: Int = 1,
     val maxPages: Int = 1,
     val participantVideoOn: List<Boolean> = listOf(false, false, false, false),
-    val participantMuted: List<Boolean> = listOf(false, false, false, false)
+    val participantMuted: List<Boolean> = listOf(false, false, false, false),
+    val waitingForHostAdmission: Boolean = false,
+    val isHost: Boolean = false,
+    val holdEnabled: Boolean = false,
+    val onHoldParticipants: List<OnHoldParticipant> = emptyList()
 )
 
 class ZoomSessionViewModel(application: Application): AndroidViewModel(application) {
@@ -48,6 +58,7 @@ class ZoomSessionViewModel(application: Application): AndroidViewModel(applicati
     private val _zoomSessionUIState = MutableStateFlow(ZoomSessionUIState())
     private var currentUsersInView: ArrayList<ZoomVideoSDKUser> = ArrayList();
     private var videoViews: List<ZoomVideoSDKVideoView> = emptyList()
+    private val onHoldUsers: LinkedHashMap<String, ZoomVideoSDKOnHoldUser> = LinkedHashMap()
     @SuppressLint("StaticFieldLeak")
     private lateinit var bigSelfView: ZoomVideoSDKVideoView
     @SuppressLint("StaticFieldLeak")
@@ -104,6 +115,7 @@ class ZoomSessionViewModel(application: Application): AndroidViewModel(applicati
         return if (returnDraggableSelfView) draggableSelfView else bigSelfView
     }
     fun closeSession(end: Boolean) {
+        onHoldUsers.clear()
         _zoomSessionUIState.update {
             it.copy(
                 currentUsersInViewCount = 0,
@@ -117,7 +129,11 @@ class ZoomSessionViewModel(application: Application): AndroidViewModel(applicati
                 inSession = false,
                 pageNumber = 1,
                 participantVideoOn = listOf(false, false, false, false),
-                participantMuted = listOf(false, false, false, false)
+                participantMuted = listOf(false, false, false, false),
+                waitingForHostAdmission = false,
+                isHost = false,
+                holdEnabled = false,
+                onHoldParticipants = emptyList()
             )
         }
         this.currentUsersInView = ArrayList()
@@ -213,5 +229,79 @@ class ZoomSessionViewModel(application: Application): AndroidViewModel(applicati
     }
     fun stopRenderSelfView(user: ZoomVideoSDKUser, view: ZoomVideoSDKVideoView) {
         user.videoCanvas.unSubscribe(view)
+    }
+
+    fun setWaitingForHostAdmission(waiting: Boolean) {
+        _zoomSessionUIState.update { it.copy(waitingForHostAdmission = waiting) }
+    }
+
+    fun refreshHostAndHoldState() {
+        val myself = ZoomVideoSDK.getInstance().session.mySelf
+        val onHoldHelper = ZoomVideoSDK.getInstance().onHoldHelper
+        _zoomSessionUIState.update {
+            it.copy(
+                isHost = myself.isHost,
+                holdEnabled = onHoldHelper?.isOnHoldEnabled == true
+            )
+        }
+    }
+
+    fun getAllSessionUsers(): List<ZoomVideoSDKUser> {
+        val session = ZoomVideoSDK.getInstance().session
+        return listOf(session.mySelf) + session.remoteUsers
+    }
+
+    fun refreshOnHoldUsersFromHelper() {
+        val users = ZoomVideoSDK.getInstance().onHoldHelper?.onHoldUserList ?: emptyList()
+        onHoldUsers.clear()
+        users.forEach { user -> onHoldUsers[user.userID] = user }
+        publishOnHoldUsers()
+    }
+
+    fun addOnHoldUsers(userList: List<ZoomVideoSDKOnHoldUser?>?) {
+        userList?.filterNotNull()?.forEach { user -> onHoldUsers[user.userID] = user }
+        publishOnHoldUsers()
+    }
+
+    fun removeOnHoldUsers(userList: List<ZoomVideoSDKOnHoldUser?>?) {
+        userList?.filterNotNull()?.forEach { user -> onHoldUsers.remove(user.userID) }
+        publishOnHoldUsers()
+    }
+
+    fun setHoldEnabled(enabled: Boolean): Int {
+        val result = ZoomVideoSDK.getInstance().onHoldHelper?.enableHold(enabled) ?: ZoomVideoSDKErrors.Errors_Unknown
+        if (result == ZoomVideoSDKErrors.Errors_Success) {
+            _zoomSessionUIState.update { it.copy(holdEnabled = enabled) }
+        }
+        return result
+    }
+
+    fun admitOnHoldUser(userId: String): Int {
+        val user = onHoldUsers[userId] ?: return ZoomVideoSDKErrors.Errors_Unknown
+        val result = ZoomVideoSDK.getInstance().onHoldHelper?.admit(user) ?: ZoomVideoSDKErrors.Errors_Unknown
+        if (result == ZoomVideoSDKErrors.Errors_Success) {
+            onHoldUsers.remove(userId)
+            publishOnHoldUsers()
+        }
+        return result
+    }
+
+    fun admitAllOnHoldUsers(): Int {
+        val result = ZoomVideoSDK.getInstance().onHoldHelper?.admitAll() ?: ZoomVideoSDKErrors.Errors_Unknown
+        if (result == ZoomVideoSDKErrors.Errors_Success) {
+            onHoldUsers.clear()
+            publishOnHoldUsers()
+        }
+        return result
+    }
+
+    private fun publishOnHoldUsers() {
+        _zoomSessionUIState.update {
+            it.copy(
+                onHoldParticipants = onHoldUsers.values.map { user ->
+                    OnHoldParticipant(user.userID, user.userName)
+                }
+            )
+        }
     }
 }

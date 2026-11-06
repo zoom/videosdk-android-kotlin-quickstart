@@ -174,10 +174,10 @@ class InSession : AppCompatActivity() {
             }
         }
         findViewById<MaterialButton>(R.id.leavebtn).apply {
-            setOnClickListener { zoomSessionViewModel.closeSession(true) }
+            setOnClickListener { zoomSessionViewModel.closeSession(false) }
         }
         findViewById<MaterialButton>(R.id.endbtn).apply {
-            setOnClickListener { zoomSessionViewModel.closeSession(false) }
+            setOnClickListener { zoomSessionViewModel.closeSession(true) }
         }
         hostOptionsBtn.setOnClickListener {
             val menu = PopupMenu(this, hostOptionsBtn)
